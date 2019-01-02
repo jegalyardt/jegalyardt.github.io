@@ -441,6 +441,7 @@ Code.init = function() {
   Code.bindClick('trashButton',
       function() {Code.discard(); Code.renderContent();});
   Code.bindClick('runButton', Code.runJS);
+  Code.bindClick('saveButton', function() {Code.attemptCodeGenerationAndSave(Blockly.Python, 'py');});
   // Disable the link button if page isn't backed by App Engine storage.
   var linkButton = document.getElementById('linkButton');
   if ('BlocklyStorage' in window) {
@@ -545,6 +546,40 @@ Code.discard = function() {
     }
   }
 };
+
+/**
+ * Attempt to generate the code and save it to the default download folder.
+ * @param generator {!Blockly.Generator} The generator to use.
+ * @param prettyPrintType {string} The file type key for the pretty printer.
+ */
+Code.attemptCodeGenerationAndSave = function(generator, prettyPrintType) {
+  // var content = document.getElementById('content_' + Code.selected);
+  if (Code.checkAllGeneratorFunctionsDefined(generator)) {
+    var code = generator.workspaceToCode(Code.workspace);
+    Code.savePython(code, "main." + prettyPrintType, "plain/text")
+  }
+};
+
+  /**
+   * Function to save data to a file
+   */
+  Code.savePython = function(data, filename, type) {
+    var file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);  
+        }, 0); 
+    }
+  };
 
 // Load the Code demo's language strings.
 document.write('<script src="scripts/msg/' + Code.LANG + '.js"></script>\n');
